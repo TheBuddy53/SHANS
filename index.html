@@ -528,8 +528,18 @@ mark.key.held{filter:brightness(1.5)}
   transition:opacity 1s cubic-bezier(.34,1.56,.64,1), transform 1s cubic-bezier(.34,1.56,.64,1), filter 1s ease;
 }
 .flower-moment.show .flower-scene{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}
-/* при закрытии — растворяется и "испаряется" вверх, будто облако */
-.flower-moment:not(.show) .flower-scene{transform:translateY(-56px) scale(1.12);filter:blur(10px);transition-duration:1.2s}
+/* фаза угасания — текст ещё виден, но перестаёт мерцать и тепло "остывает",
+   прежде чем начнётся финальное растворение вверх */
+.flower-moment.fading .flower-scene{transform:translateY(-4px) scale(1.02);filter:blur(.5px);transition-duration:.9s}
+.flower-moment.fading .flower-text{animation:titleShimmer 3.5s linear infinite, flowerCooling .9s ease-out forwards}
+.flower-moment.fading .flower-glow{animation:flowerGlowCooling .9s ease-out forwards}
+@keyframes flowerCooling{
+  0%{filter:drop-shadow(0 0 26px var(--pink-glow)) drop-shadow(0 0 55px rgba(255,180,110,.75))}
+  100%{filter:drop-shadow(0 0 10px var(--pink-glow)) drop-shadow(0 0 16px rgba(255,180,110,.2))}
+}
+@keyframes flowerGlowCooling{0%{opacity:1;transform:scale(1.1)}100%{opacity:.4;transform:scale(.9)}}
+/* при закрытии — растворяется и "испаряется" вверх, будто облако, плавно и медленно */
+.flower-moment:not(.show) .flower-scene{transform:translateY(-56px) scale(1.12);filter:blur(10px);transition-duration:1.6s;transition-timing-function:cubic-bezier(.4,0,.6,1)}
 
 .flower-emoji{font-size:54px;filter:drop-shadow(0 8px 30px var(--pink-glow));
   animation:flowerGrow 2.4s ease-in-out infinite, flowerSway 3.4s ease-in-out infinite;}
@@ -541,6 +551,7 @@ mark.key.held{filter:brightness(1.5)}
   background-size:300% auto;-webkit-background-clip:text;background-clip:text;color:transparent;
   animation:titleShimmer 1.8s linear infinite, forTextRise 2.6s ease-in-out infinite, flowerTextFlicker 2.2s ease-in-out infinite;
   text-shadow:0 0 50px var(--pink-glow);
+  transition:filter .9s ease-out;
 }
 @keyframes flowerTextFlicker{
   0%,100%{filter:drop-shadow(0 0 18px var(--pink-glow)) drop-shadow(0 0 40px rgba(255,180,110,.55))}
@@ -909,7 +920,7 @@ function goTo(id){
   document.body.classList.toggle('celebrating', id === 's4yes');
   if(id === 's4yes') startCelebrationSparkles();
   else stopCelebrationSparkles();
-  if(id !== 's1' && flowerRepeatTimer){ clearTimeout(flowerRepeatTimer); flowerRepeatTimer = null; }
+  if(id !== 's1' && flowerRepeatTimer){ clearTimeout(flowerRepeatTimer); flowerRepeatTimer = null; flowerNextDue = 0; }
 }
 
 /* мягкие блёстки, непрерывно плывущие по фону, пока показан экран "Спасибо, что дочитала" */
@@ -1080,17 +1091,45 @@ function showFlowerMoment(){
   const el = document.getElementById('flowerMoment');
   buildClouds();
   el.classList.add('show');
+  el.classList.remove('fading');
   heartChime();
   spawnFlowerHearts();
   spawnEmbers();
   setTimeout(()=>{
-    el.classList.remove('show');
-    // спустя 12 секунд после исчезновения момент "ДЛЯ ТЕБЯ" появляется снова —
-    // и так по кругу, пока пользователь остаётся на экране письма
-    flowerRepeatTimer = setTimeout(showFlowerMoment, 12000);
+    // фаза "затухания" перед полным исчезновением — текст ещё горит, но
+    // уже плавно остывает/тает несколько мгновений
+    el.classList.add('fading');
+    setTimeout(()=>{
+      el.classList.remove('show','fading');
+      // спустя 12 секунд после исчезновения момент "ДЛЯ ТЕБЯ" появляется снова —
+      // и так по кругу, пока пользователь остаётся на экране письма.
+      // Время следующего показа фиксируем абсолютной меткой (а не только
+      // setTimeout), чтобы телефон, притормозивший таймеры в фоне вкладки,
+      // не "съел" повтор — при возврате на вкладку мы досчитываем честно.
+      flowerNextDue = Date.now() + 12000;
+      flowerRepeatTimer = setTimeout(checkFlowerRepeat, 12000);
+    }, 900);
   }, 4500);
 }
 let flowerRepeatTimer = null;
+let flowerNextDue = 0;
+
+/* проверяет, не пора ли показать "ДЛЯ ТЕБЯ" снова — вызывается и по таймеру,
+   и при возврате вкладки в фокус, чтобы фоновое дросселирование таймеров
+   на телефоне не срывало повторный показ */
+function checkFlowerRepeat(){
+  if(!flowerNextDue) return;
+  const remaining = flowerNextDue - Date.now();
+  if(remaining <= 0){
+    flowerNextDue = 0;
+    showFlowerMoment();
+  } else {
+    flowerRepeatTimer = setTimeout(checkFlowerRepeat, Math.min(remaining, 3000));
+  }
+}
+document.addEventListener('visibilitychange', ()=>{
+  if(!document.hidden && flowerNextDue) checkFlowerRepeat();
+});
 
 /* тлеющие искры, поднимающиеся из-под текста "ДЛЯ ТЕБЯ" — эффект "горящего" свечения */
 function spawnEmbers(){
