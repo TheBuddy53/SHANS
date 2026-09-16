@@ -58,6 +58,25 @@ body{
 
 /* лёгкий параллакс-сдвиг слоёв от движения мыши / наклона телефона — усиливает ощущение глубины */
 #bgtint,#mesh{transition:transform .5s cubic-bezier(.25,1,.15,1)}
+
+/* ===== состояние "празднования" — включается после выбора "да", фон мягко танцует и блестит ===== */
+body.celebrating #mesh{animation:celebrateSaturate 3.2s ease-in-out infinite;opacity:.8}
+@keyframes celebrateSaturate{0%,100%{filter:blur(60px) saturate(140%)}50%{filter:blur(50px) saturate(190%)}}
+body.celebrating #mesh .b1{animation-duration:7s}
+body.celebrating #mesh .b2{animation-duration:8.5s}
+body.celebrating #mesh .b3{animation-duration:9.5s}
+body.celebrating #bgtint{animation:celebrateBgPulse 4s ease-in-out infinite}
+@keyframes celebrateBgPulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.12)}}
+/* фоновые блёстки, парящие поверх сцены "спасибо" */
+#celebrateSparkles{position:fixed;inset:0;z-index:2;pointer-events:none;overflow:hidden;display:none}
+body.celebrating #celebrateSparkles{display:block}
+.cs-spark{position:absolute;opacity:0;animation:csSparkFloat linear infinite;filter:drop-shadow(0 0 6px var(--pink-glow))}
+@keyframes csSparkFloat{
+  0%{opacity:0;transform:translateY(0) scale(.5) rotate(0deg)}
+  12%{opacity:1}
+  85%{opacity:.85}
+  100%{opacity:0;transform:translateY(-90vh) scale(1.1) rotate(var(--csrot,30deg))}
+}
 .card{transition:transform .4s cubic-bezier(.25,1,.15,1), box-shadow .35s var(--ease)}
 
 /* плавающие сердечки на фоне — детализированные SVG, часть с трещиной, все "стучат" */
@@ -541,6 +560,7 @@ mark.key.held{filter:brightness(1.5)}
 <div id="mesh"><span class="b1"></span><span class="b2"></span><span class="b3"></span></div>
 <div id="hearts"></div>
 <div id="confetti"></div>
+<div id="celebrateSparkles"></div>
 <div id="keyTip" class="key-tip"></div>
 <div id="companionTimer"></div>
 
@@ -633,9 +653,8 @@ mark.key.held{filter:brightness(1.5)}
     </div>
     <div class="choice-grid" id="choiceGrid">
       <button class="choice-btn yes" onclick="choose('yes')"><span class="emoji">💗</span>Хочу поговорить</button>
-      <button class="choice-btn yes" onclick="choose('yes')"><span class="emoji">🥹</span>Соскучилась вообще-то</button>
       <button class="choice-btn yes" onclick="choose('yes')"><span class="emoji">🍡</span>Ладно, айстишку с меня</button>
-      <button class="choice-btn no" id="noBtn" onclick="choose('no')"><span class="emoji">🤍</span>Пока не готова</button>
+      <button class="choice-btn no" id="noBtn" style="grid-column:1 / -1" onclick="choose('no')"><span class="emoji">🤍</span>Пока не готова</button>
     </div>
   </div>
 
@@ -865,6 +884,36 @@ function goTo(id){
   if(id === 's3') startFinalSparks();
   const ph = document.getElementById('progressHeart');
   if(ph) ph.classList.toggle('visible', id === 's1');
+  document.body.classList.toggle('celebrating', id === 's4yes');
+  if(id === 's4yes') startCelebrationSparkles();
+  else stopCelebrationSparkles();
+}
+
+/* мягкие блёстки, непрерывно плывущие по фону, пока показан экран "Спасибо, что дочитала" */
+let celebrateInterval = null;
+function startCelebrationSparkles(){
+  if(celebrateInterval) return;
+  const wrap = document.getElementById('celebrateSparkles');
+  const icons = ['✨','💗','🌸','💫'];
+  function spawn(){
+    const s = document.createElement('span');
+    s.className = 'cs-spark';
+    s.textContent = icons[Math.floor(Math.random()*icons.length)];
+    s.style.left = (Math.random()*100)+'vw';
+    s.style.bottom = '-5%';
+    s.style.fontSize = (14+Math.random()*16)+'px';
+    s.style.setProperty('--csrot', (Math.random()*60-30)+'deg');
+    s.style.animationDuration = (5+Math.random()*4)+'s';
+    wrap.appendChild(s);
+    setTimeout(()=>s.remove(), 9500);
+  }
+  for(let i=0;i<6;i++) setTimeout(spawn, i*180);
+  celebrateInterval = setInterval(spawn, 550);
+}
+function stopCelebrationSparkles(){
+  if(celebrateInterval){ clearInterval(celebrateInterval); celebrateInterval = null; }
+  const wrap = document.getElementById('celebrateSparkles');
+  if(wrap) wrap.innerHTML = '';
 }
 
 document.getElementById('s0').querySelector('.btn').addEventListener('click', ()=>{
@@ -901,7 +950,14 @@ function createYtPlayer(){
   ytPlayer = new YT.Player('yt-player', {
     height: '1', width: '1',
     videoId: '9KKK-ul-gYM',
-    playerVars: { autoplay: 0, controls: 0, disablekb: 1, modestbranding: 1, playsinline: 1, origin: window.location.origin },
+    playerVars: {
+      autoplay: 0, controls: 0, disablekb: 1, modestbranding: 1, playsinline: 1,
+      origin: window.location.origin,
+      // loop=1 c playlist=<тот же videoId> — официальный способ YouTube зациклить
+      // одно и то же видео бесконечно; ниже добавлен ещё и ручной ENDED-фолбэк
+      // на случай, если loop-параметр не сработает в конкретном плеере/регионе.
+      loop: 1, playlist: '9KKK-ul-gYM'
+    },
     events: {
       'onReady': function(){
         ytPlayerReady = true;
@@ -914,6 +970,14 @@ function createYtPlayer(){
         if(e.data === YT.PlayerState.PLAYING && !flowerTimerArmed){
           flowerTimerArmed = true;
           flowerTimer = setTimeout(showFlowerMoment, 39000);
+        }
+        // Ручной перезапуск с начала, если трек всё же закончился —
+        // музыка играет бесконечно на повторе весь сеанс чтения письма.
+        if(e.data === YT.PlayerState.ENDED){
+          try{
+            ytPlayer.seekTo(0, true);
+            ytPlayer.playVideo();
+          }catch(err){}
         }
       }
     }
