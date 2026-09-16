@@ -1296,7 +1296,11 @@ function startCompanionTimer(){
   setInterval(tick, 5000);
 }
 
+let flowerShowCount = 0;
+const FLOWER_MAX_SHOWS = 2;
+
 function showFlowerMoment(){
+  flowerShowCount++;
   const el = document.getElementById('flowerMoment');
   buildClouds();
   buildDust();
@@ -1316,13 +1320,16 @@ function showFlowerMoment(){
     setTimeout(()=>{
       el.classList.remove('show','fading');
       clearTimeout(midBurst1); clearTimeout(midBurst2);
-      // спустя 9 секунд после исчезновения момент "ДЛЯ ТЕБЯ" появляется снова —
-      // и так по кругу, пока пользователь остаётся на экране письма.
-      // Время следующего показа фиксируем абсолютной меткой (а не только
-      // setTimeout), чтобы телефон, притормозивший таймеры в фоне вкладки,
-      // не "съел" повтор — при возврате на вкладку мы досчитываем честно.
-      flowerNextDue = Date.now() + 9000;
-      flowerRepeatTimer = setTimeout(checkFlowerRepeat, 9000);
+      // момент "ДЛЯ ТЕБЯ" показывается ровно 2 раза за сессию: первый раз
+      // через 39с после начала музыки, второй — спустя ~9с после того, как
+      // первый исчез. После второго показа — больше никогда не повторяется.
+      if(flowerShowCount < FLOWER_MAX_SHOWS){
+        flowerNextDue = Date.now() + 9000;
+        flowerRepeatTimer = setTimeout(checkFlowerRepeat, 9000);
+      } else {
+        flowerNextDue = 0;
+        flowerRepeatTimer = null;
+      }
     }, 1100);
   }, 6200);
 }
