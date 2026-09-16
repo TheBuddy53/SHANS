@@ -231,14 +231,22 @@ p.body-text{font-size:15px;line-height:1.75;color:var(--text-main);margin:0;text
   background:linear-gradient(135deg, var(--pink), var(--pink-dark));
   color:#fff;
   box-shadow:0 12px 26px -8px var(--pink-glow), inset 0 1px 1px rgba(255,255,255,.3);
+}
+/* мягкое дышащее свечение вокруг главной кнопки — сделано через ::after,
+   а не через animation на самой кнопке, чтобы не конфликтовать с её
+   собственной входной анимацией (cover-in и т.п.) */
+.btn.primary::after{
+  content:"";position:absolute;inset:-3px;z-index:-1;border-radius:inherit;
+  box-shadow:0 0 0 0 rgba(255,111,165,0);
   animation:btnPrimaryBloom 2.8s ease-in-out infinite;
+  pointer-events:none;
 }
-/* мягкое дышащее свечение вокруг главной кнопки — делает её живой, а не статичной */
 @keyframes btnPrimaryBloom{
-  0%,100%{box-shadow:0 12px 26px -8px var(--pink-glow), inset 0 1px 1px rgba(255,255,255,.3)}
-  50%{box-shadow:0 14px 34px -6px var(--pink-glow), 0 0 0 6px rgba(255,111,165,.08), inset 0 1px 1px rgba(255,255,255,.35)}
+  0%,100%{box-shadow:0 0 18px 0 rgba(255,111,165,0)}
+  50%{box-shadow:0 0 22px 4px rgba(255,111,165,.35)}
 }
-.btn.primary:hover{filter:brightness(1.08);box-shadow:0 14px 32px -6px var(--pink-glow), inset 0 1px 1px rgba(255,255,255,.35);animation-play-state:paused}
+.btn.primary:hover{filter:brightness(1.08);box-shadow:0 14px 32px -6px var(--pink-glow), inset 0 1px 1px rgba(255,255,255,.35)}
+.btn.primary:hover::after{animation-play-state:paused}
 .btn.ghost{
   background:rgba(255,255,255,.06);
   color:var(--text-main);
