@@ -507,8 +507,9 @@ mark.key.held{filter:brightness(1.5)}
   filter:blur(30px);opacity:0;transform:scale(.6);
   transition:opacity 1.1s ease, transform 1.3s cubic-bezier(.22,1,.36,1);
 }
-.flower-moment.show .flower-glow{opacity:1;transform:scale(1);animation:flowerGlowPulse 2.6s ease-in-out infinite}
-@keyframes flowerGlowPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+.flower-moment.show .flower-glow{opacity:1;transform:scale(1);animation:flowerGlowPulse 1.8s ease-in-out infinite, flowerGlowFlicker 3.4s ease-in-out infinite}
+@keyframes flowerGlowPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.18)}}
+@keyframes flowerGlowFlicker{0%,100%{opacity:1}30%{opacity:.82}50%{opacity:1}72%{opacity:.88}}
 
 /* облачные "клубы" — размытые пятна, на которых будто плывёт текст, растворяясь как туман/пыль */
 .flower-clouds{position:absolute;inset:0;pointer-events:none;overflow:hidden;filter:blur(2px)}
@@ -536,16 +537,36 @@ mark.key.held{filter:brightness(1.5)}
 @keyframes flowerSway{0%,100%{rotate:-4deg}50%{rotate:4deg}}
 .flower-text{
   margin-top:10px;font-size:clamp(38px,11vw,64px);font-weight:900;letter-spacing:.04em;color:#fff;
-  background:linear-gradient(90deg,#fff,var(--pink-light),#fff);
-  background-size:200% auto;-webkit-background-clip:text;background-clip:text;color:transparent;
-  animation:titleShimmer 2.4s linear infinite, forTextRise 2.6s ease-in-out infinite;
+  background:linear-gradient(90deg,#fff,var(--pink-light),#ffcf6b,var(--pink-light),#fff);
+  background-size:300% auto;-webkit-background-clip:text;background-clip:text;color:transparent;
+  animation:titleShimmer 1.8s linear infinite, forTextRise 2.6s ease-in-out infinite, flowerTextFlicker 2.2s ease-in-out infinite;
   text-shadow:0 0 50px var(--pink-glow);
+}
+@keyframes flowerTextFlicker{
+  0%,100%{filter:drop-shadow(0 0 18px var(--pink-glow)) drop-shadow(0 0 40px rgba(255,180,110,.55))}
+  35%{filter:drop-shadow(0 0 26px var(--pink-glow)) drop-shadow(0 0 55px rgba(255,180,110,.75))}
+  60%{filter:drop-shadow(0 0 14px var(--pink-glow)) drop-shadow(0 0 30px rgba(255,180,110,.4))}
 }
 @keyframes forTextRise{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 .flower-sub{margin-top:14px;font-size:16px;color:var(--text-muted)}
 
 .flower-hearts{position:absolute;inset:0;pointer-events:none;overflow:hidden}
 .fh{position:absolute;bottom:-5%;opacity:0;animation:fhFloat linear forwards}
+
+/* тлеющие искры/угольки, поднимающиеся снизу вверх вокруг текста — усиливают ощущение "горящего" момента */
+.flower-embers{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:1}
+.ember{
+  position:absolute;bottom:20%;border-radius:50%;opacity:0;
+  background:radial-gradient(circle, #fff 0%, #ffcf6b 35%, var(--pink) 70%, transparent 100%);
+  animation:emberRise linear forwards;
+  filter:blur(.3px);
+}
+@keyframes emberRise{
+  0%{opacity:0;transform:translate(0,0) scale(.4)}
+  15%{opacity:1}
+  80%{opacity:.7}
+  100%{opacity:0;transform:translate(var(--edx,0),-46vh) scale(.1)}
+}
 @keyframes fhFloat{
   0%{opacity:0;transform:translateY(0) scale(.5) rotate(0deg)}
   15%{opacity:1}
@@ -575,6 +596,7 @@ mark.key.held{filter:brightness(1.5)}
   <div class="flower-glow"></div>
   <div class="flower-clouds" id="flowerClouds"></div>
   <div class="flower-hearts" id="flowerHearts"></div>
+  <div class="flower-embers" id="flowerEmbers"></div>
   <div class="flower-scene">
     <div class="flower-emoji">💗</div>
     <div class="flower-text">ДЛЯ ТЕБЯ</div>
@@ -887,6 +909,7 @@ function goTo(id){
   document.body.classList.toggle('celebrating', id === 's4yes');
   if(id === 's4yes') startCelebrationSparkles();
   else stopCelebrationSparkles();
+  if(id !== 's1' && flowerRepeatTimer){ clearTimeout(flowerRepeatTimer); flowerRepeatTimer = null; }
 }
 
 /* мягкие блёстки, непрерывно плывущие по фону, пока показан экран "Спасибо, что дочитала" */
@@ -1059,9 +1082,34 @@ function showFlowerMoment(){
   el.classList.add('show');
   heartChime();
   spawnFlowerHearts();
+  spawnEmbers();
   setTimeout(()=>{
     el.classList.remove('show');
+    // спустя 12 секунд после исчезновения момент "ДЛЯ ТЕБЯ" появляется снова —
+    // и так по кругу, пока пользователь остаётся на экране письма
+    flowerRepeatTimer = setTimeout(showFlowerMoment, 12000);
   }, 4500);
+}
+let flowerRepeatTimer = null;
+
+/* тлеющие искры, поднимающиеся из-под текста "ДЛЯ ТЕБЯ" — эффект "горящего" свечения */
+function spawnEmbers(){
+  const wrap = document.getElementById('flowerEmbers');
+  if(!wrap) return;
+  for(let i=0;i<22;i++){
+    setTimeout(()=>{
+      const e = document.createElement('span');
+      e.className = 'ember';
+      const size = 3+Math.random()*6;
+      e.style.width = size+'px';
+      e.style.height = size+'px';
+      e.style.left = (30+Math.random()*40)+'%';
+      e.style.setProperty('--edx', (Math.random()*80-40)+'px');
+      e.style.animationDuration = (1.8+Math.random()*1.6)+'s';
+      wrap.appendChild(e);
+      setTimeout(()=>e.remove(), 3600);
+    }, i*140);
+  }
 }
 
 /* размытые облачные клубы позади текста — создаются заново при каждом показе */
