@@ -205,30 +205,31 @@ p.body-text{font-size:15px;line-height:1.75;color:var(--text-main);margin:0;text
 .letter-card{transform:translateY(22px) scale(.95);filter:blur(7px)}
 .letter-card.shown{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}
 
-.letter-card.mood-warm{transition:opacity .85s cubic-bezier(.22,1,.36,1), transform .85s cubic-bezier(.22,1,.36,1), filter .85s cubic-bezier(.22,1,.36,1), box-shadow 1.1s ease}
-.letter-card.mood-warm.shown{box-shadow:0 0 40px -10px var(--pink-glow)}
+.letter-card.mood-warm{transition:opacity .85s cubic-bezier(.22,1,.36,1), transform .85s cubic-bezier(.22,1,.36,1), filter .85s cubic-bezier(.22,1,.36,1), box-shadow 1.2s ease}
+.letter-card.mood-warm.shown{filter:blur(0);box-shadow:0 0 44px -8px var(--pink-glow);animation:moodGlowPulse 2.6s ease-in-out .9s infinite}
+@keyframes moodGlowPulse{0%,100%{box-shadow:0 0 44px -8px var(--pink-glow)}50%{box-shadow:0 0 58px -6px var(--pink-glow)}}
 
-.letter-card.mood-sad{transform:translateY(-26px) scale(.97);filter:blur(7px);transition:opacity 1s cubic-bezier(.25,1,.4,1), transform 1s cubic-bezier(.25,1,.4,1), filter 1s ease}
-.letter-card.mood-sad.shown{transform:translateY(0) scale(1)}
+.letter-card.mood-sad{transform:translateY(-26px) scale(.97);filter:blur(7px);transition:opacity 1.05s cubic-bezier(.22,.7,.25,1), transform 1.05s cubic-bezier(.22,.7,.25,1), filter 1.05s ease}
+.letter-card.mood-sad.shown{transform:translateY(0) scale(1);filter:blur(0)}
 
 .letter-card.mood-hurt{transform:translateX(-10px) scale(.96);filter:blur(6px);transition:opacity .6s ease, filter .6s ease, transform .6s cubic-bezier(.36,.07,.19,.97)}
-.letter-card.mood-hurt.shown{animation:hurtShakeIn .6s cubic-bezier(.36,.07,.19,.97)}
+.letter-card.mood-hurt.shown{filter:blur(0);animation:hurtShakeIn .65s cubic-bezier(.36,.07,.19,.97) forwards}
 @keyframes hurtShakeIn{
-  0%{opacity:0;transform:translateX(-10px) scale(.96)}
-  30%{opacity:1;transform:translateX(6px) scale(1.01)}
-  50%{transform:translateX(-4px) scale(.995)}
+  0%{opacity:0;transform:translateX(-10px) scale(.96);filter:blur(6px)}
+  30%{opacity:1;transform:translateX(6px) scale(1.01);filter:blur(2px)}
+  50%{transform:translateX(-4px) scale(.995);filter:blur(0)}
   70%{transform:translateX(2px)}
-  100%{opacity:1;transform:translateX(0) scale(1)}
+  100%{opacity:1;transform:translateX(0) scale(1);filter:blur(0)}
 }
 
-.letter-card.mood-hope{transform:translateY(30px) scale(.9);filter:blur(8px);transition:opacity .9s cubic-bezier(.22,1.4,.36,1), transform .9s cubic-bezier(.22,1.4,.36,1), filter .9s ease}
-.letter-card.mood-hope.shown{transform:translateY(0) scale(1)}
+.letter-card.mood-hope{transform:translateY(30px) scale(.9);filter:blur(8px);transition:opacity 1s cubic-bezier(.22,1.3,.36,1), transform 1s cubic-bezier(.22,1.3,.36,1), filter 1s ease}
+.letter-card.mood-hope.shown{transform:translateY(0) scale(1);filter:blur(0)}
 
 .letter-card.mood-firm{transform:translateX(-26px) scale(.97);filter:blur(4px);transition:opacity .55s cubic-bezier(.16,1,.3,1), transform .55s cubic-bezier(.16,1,.3,1), filter .55s ease}
-.letter-card.mood-firm.shown{transform:translateX(0) scale(1)}
+.letter-card.mood-firm.shown{transform:translateX(0) scale(1);filter:blur(0)}
 
-.letter-card.mood-funny{transform:translateY(18px) scale(.9) rotate(-2deg);filter:blur(6px);transition:opacity .7s var(--spring), transform .7s var(--spring), filter .7s ease}
-.letter-card.mood-funny.shown{transform:translateY(0) scale(1) rotate(0deg)}
+.letter-card.mood-funny{transform:translateY(18px) scale(.9) rotate(-2deg);filter:blur(6px);transition:opacity .75s var(--spring), transform .75s var(--spring), filter .75s ease}
+.letter-card.mood-funny.shown{transform:translateY(0) scale(1) rotate(0deg);filter:blur(0)}
 
 /* настроения карточек */
 .letter-card.mood-warm{background:linear-gradient(135deg, rgba(255,111,165,.10), rgba(255,255,255,.03));--mood-bar:var(--pink)}
@@ -627,10 +628,10 @@ mark.key.held{filter:brightness(1.5)}
   if(!el) return;
   const h = new Date().getHours();
   let text;
-  if(h >= 5 && h < 12) text = 'Доброе утро, вупсень)';
-  else if(h >= 12 && h < 17) text = 'Добрый день, вупсень)';
-  else if(h >= 17 && h < 23) text = 'Добрый вечер, вупсень)';
-  else text = 'Спокойной ночи, вупсень)';
+  if(h >= 5 && h < 12) text = 'Доброе утро, солнышко';
+  else if(h >= 12 && h < 17) text = 'Привет, моя хорошая';
+  else if(h >= 17 && h < 23) text = 'Здравствуй, родная';
+  else text = 'Не спишь? Я тоже думаю о тебе';
 
   let idx = 0;
   function tick(){
